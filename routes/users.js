@@ -1,4 +1,4 @@
-const texttest = require("./texttest");
+const texttest = require("../texttest");
 
 const express = require('express');
 let router = express.Router();
@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 var MySQLStore = require("express-mysql-session")(session);
 
-const mysqlCon = require('./mysql');
+const mysqlCon = require('../mysql');
 const membertbcon = mysqlCon.init();
 mysqlCon.open(membertbcon);
 
@@ -15,13 +15,8 @@ const crypto = require('crypto');
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
-var options = {
-    host: 'localhost',
-    user: 'root',
-    password: 'tnksm1219!',
-    database: 'homepage',
-    port: 3306
-};
+
+
 //var sessionStore = new MySQLStore(options);
 // router.use(
 //     session({
