@@ -1,0 +1,22 @@
+{
+  "name": "javascript",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": ""
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^1.19.1",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^14.1.0",
+    "express": "^4.17.2",
+    "express-mysql-session": "^2.1.7",
+    "express-session": "^1.17.2",
+    "morgan": "^1.10.0",
+    "mysql": "^2.18.1"
+  }
+  
+}
