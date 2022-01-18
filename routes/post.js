@@ -3,7 +3,7 @@ let router = express.Router();
 const bodyParser = require('body-parser');
 const session = require('express-session');
 var MySQLStore = require("express-mysql-session")(session);
-const mysqlCon = require('./mysql');
+const mysqlCon = require('../mysql');
 const logger = require('morgan');
 
 router.use(bodyParser.json());
@@ -11,13 +11,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 
 const boardtbcon = mysqlCon.init();
 mysqlCon.open(boardtbcon);
-// var options = {
-//     host: 'localhost',
-//     user: 'root',
-//     password: 'tnksm1219!',
-//     database: 'homepage',
-//     port: 3306
-// };
+
 // var sessionStore = new MySQLStore(options);
 // router.use(
 //     session({
