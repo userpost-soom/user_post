@@ -8,8 +8,8 @@ const session = require('express-session');
 var MySQLStore = require("express-mysql-session")(session);
 
 const mysqlCon = require('../mysql');
-const membertbcon = mysqlCon.init();
-mysqlCon.open(membertbcon);
+const memberquery = mysqlCon.init();
+mysqlCon.open(memberquery);
 
 const crypto = require('crypto');
 
@@ -53,7 +53,7 @@ router.post('/signup', (req, res) => {
     if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email");
     if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num");
     //조건을 만족할 경우
-    membertbcon.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`, (err, row) => {
+    memberquery.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`, (err, row) => {
         if (err) { return res.status(400).send(err.sqlMessage); }
         //id 휴대폰 중복이면 err되도록
         return res.status(201).send("signup_ok");
@@ -67,7 +67,7 @@ router.post('/login', (req, res) => {
     let id = req.body.id;
     let password = req.body.password;
 
-    membertbcon.query('select * from member_table where id = ?', [id], (err, result, fiedls) => {
+    memberquery.query('select * from member_table where id = ?', [id], (err, result, fiedls) => {
         if (err) { console.log(err); return res.status(400); }
         //맞는 id가 없으면 다시 입력하기
         if (!result[0]) return res.status(404).send('checkyour_id');
@@ -76,7 +76,7 @@ router.post('/login', (req, res) => {
         let dbpassword = user.password;
         let dbsalt = user.salt;
         let hashPassword = crypto.createHash("sha512").update(password + dbsalt).digest("hex");
-        if (user.isResign == 'y') return res.status(401).send('deleted_id');
+        if (user.isResign == 'y') return res.status(401).send('checkyour_id');
 
         //값이 존재할 경우
         if (result.length > 0) {
@@ -103,7 +103,7 @@ router.put('/modify', (req, res) => { // 수정하기
     let salt = Math.round((new Date().valueOf() * Math.random())) + "";
     let hashPassword = crypto.createHash("sha512").update(modify_password + salt).digest("hex");
 
-    boardtbcon.query('UPDATE member_table SET ? modify_time = current_timestamp() where id = ?', [hashPassword, id]
+    memberquery.query('UPDATE member_table SET ? modify_time = current_timestamp() where id = ?', [hashPassword, id]
         , (err, result) => {
             if (err) return req.status(400);
             res.status(200).send("success_modify");
@@ -119,9 +119,9 @@ router.get('/logout', (req, res) => {
 })
 
 //회원탈퇴
-router.delete('/', (req, res) => { // ' /'
+router.delete('/', (req, res) => {
     let idx = req.body.idx;
-    membertbcon.query('UPDATE member_table set resign_time = current_timestamp(), isResign = "y" where idx = ?', [idx], (err, result, fiedls) => {
+    memberquery.query('UPDATE member_table set resign_time = current_timestamp(), isResign = "y" where idx = ?', [idx], (err, result, fiedls) => {
         if (err) {
             return res.status(400).send(err);
         }

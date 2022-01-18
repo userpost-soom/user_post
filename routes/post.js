@@ -6,6 +6,9 @@ var MySQLStore = require("express-mysql-session")(session);
 const mysqlCon = require('../mysql');
 const logger = require('morgan');
 
+const crypto = require('crypto');
+
+
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
 
@@ -41,9 +44,6 @@ router.get('/', (req, res, next) => {
     }
 });
 
-// router.get('/write', (req, res) => {
-//     res.send("글쓰기");
-// });
 
 router.post('/write', (req, res) => {
     let newWrite = {
@@ -53,10 +53,13 @@ router.post('/write', (req, res) => {
         "board_pass": req.body.board_pass
     };
 
+    let board_password = req.body.board_pass
+    let hashPassword = crypto.createHash("sha256").update(board_password).digest("hex");
+
     //게시글 입력 쿼리 보내기
     if (req.body.title && req.body.content && req.body.user_id) { //세가지의 값이 존재할 경우
         boardtbcon.query('INSERT INTO board_table SET ?', newWrite, (err, row) => {
-            if (err) { res.status(400).send(err.sqlMessage) }
+            if (err) { res.status(400); }
             else return res.status(201).send("success_write");
 
         });
@@ -65,7 +68,7 @@ router.post('/write', (req, res) => {
 });
 
 //게시글 보기
-router.get('/view/:idx', (req, res) => {
+router.get('/:idx', (req, res) => {
     //idx의 번호를 가진 게시글을 보여줌 
     boardtbcon.query('select idx, title, content, user_id from board_table where idx = ?', parseInt(req.params.idx), (err, result, field) => {
         if (err) res.status(400).send(err.sqlMessage);
@@ -75,7 +78,7 @@ router.get('/view/:idx', (req, res) => {
 });
 
 //수정하기 버튼을 눌렀을 경우
-router.put('/write/:idx', (req, res) => {
+router.put('/:idx', (req, res) => {
     let modifyWrite = {
         "title": req.body.title,
         "content": req.body.content,
@@ -92,7 +95,7 @@ router.put('/write/:idx', (req, res) => {
 });
 
 //삭제
-router.delete('/view/:idx', (req, res) => {
+router.delete('/:idx', (req, res) => {
     //삭제시간 넣기
     let idx = parseInt(req.params.idx);
     boardtbcon.query('update board_table SET delete_time = current_timestamp() where idx = ?', idx,
