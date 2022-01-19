@@ -53,14 +53,20 @@ router.post('/write', (req, res) => {
         "board_pass": req.body.board_pass
     };
 
-    let board_password = req.body.board_pass
-    let hashPassword = crypto.createHash("sha256").update(board_password).digest("hex");
-
+    let board_password = newWrite.board_pass;
     //게시글 입력 쿼리 보내기
     if (req.body.title && req.body.content && req.body.user_id) { //세가지의 값이 존재할 경우
+        if (newWrite.board_pass) { //게시글 비밀번호가 있을 경우
+            let hashPassword = crypto.createHash("sha256").update(board_password).digest("hex");
+            boardtbcon.query(`INSERT INTO board_table SET title = '${newWrite.title}' , content ='${newWrite.content}', user_id ='${newWrite.user_id}', board_pass = '${newWrite.board_pass}'`, (err, row) => {
+                if (err) { return res.status(400); }
+                else return res.status(201);
+            });
+        }
+        //게시글 비밀번호가 없을 경우
         boardtbcon.query('INSERT INTO board_table SET ?', newWrite, (err, row) => {
-            if (err) { res.status(400); }
-            else return res.status(201).send("success_write");
+            if (err) { return res.status(400); }
+            else return res.status(201);
 
         });
     } else return res.status(400).send("there_is_blank_info");
@@ -86,6 +92,10 @@ router.put('/:idx', (req, res) => {
         "board_pass": req.body.board_pass
     };
     //수정한 내용과 시간을 같이 보내줌
+    if (req.body.board_pass) {
+        let board_password = req.body.board_pass
+        let hashPassword = crypto.createHash("sha256").update(board_password).digest("hex");
+    }
     if (!req.body.title || !req.body.content || !req.body.user_id) return res.status(400).send("there_is_blank");
     boardtbcon.query('UPDATE board_table SET title = ?, content = ?, modify_time = current_timestamp() where idx = ?'
         , [modifyWrite.title, modifyWrite.content, parseInt(req.params.idx)], (err, result) => {
