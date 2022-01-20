@@ -41,23 +41,34 @@ router.post('/signup', (req, res) => {
     let body = req.body;
     let inputPassword = body.password;
     if (!req.body.id || !req.body.name || !req.body.email || !req.body.phone_num) return res.status(400).send("there_is_blank");
-
     if (!texttest.password.test(inputPassword)) return res.status(401).send("write_other_password");
 
     //비밀번호 암호화
     let salt = Math.round((new Date().valueOf() * Math.random())) + "";
     let hashPassword = crypto.createHash("sha512").update(inputPassword + salt).digest("hex");
 
-    //입력애햐 하는 필수요소들 중 하나라도 빠졌을 경우
+    //입력해야 하는 필수요소들 중 하나라도 빠졌을 경우
     if (!texttest.id.test(req.body.id)) return res.status(401).send("4_and_20size_write_olny_english_and_num");
     if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email");
     if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num");
+
     //조건을 만족할 경우
-    memberquery.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`, (err, row) => {
-        if (err) { return res.status(400).send(err.sqlMessage); }
-        //id 휴대폰 중복이면 err되도록
-        return res.status(201).send("signup_ok");
-    })
+    //중복인 id 비교하기
+    memberquery.query('select id, phone_num from member_table', (err, result) => {
+        if (err) { return res.status(400); }
+        //console.log(result);
+        for (const item of result) {
+            if (item.id == body.id) return res.status(401).send("duplicated_id");
+            if (item.phone_num == body.phone_num) return res.status(401).send("duplicated_phone_num");
+        }
+        memberquery.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`,
+            (err, row) => {
+                if (err) { return res.status(400); }
+                //id 휴대폰 중복이면 err되도록
+                return res.status(201).send("signup_ok");
+            })
+
+    });
 
 });
 
@@ -76,6 +87,7 @@ router.post('/login', (req, res) => {
         let dbpassword = user.password;
         let dbsalt = user.salt;
         let hashPassword = crypto.createHash("sha512").update(password + dbsalt).digest("hex");
+
         if (user.isResign == 'y') return res.status(401).send('checkyour_id');
 
         //값이 존재할 경우
@@ -114,7 +126,6 @@ router.put('/modify', (req, res) => { // 수정하기
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500);
-        //res.redirect("/login");
     })
 })
 
@@ -125,7 +136,7 @@ router.delete('/', (req, res) => {
         if (err) {
             return res.status(400).send(err);
         }
-        return res.redirect("/login");
+        return res.status(203);
     }
     )
 });
