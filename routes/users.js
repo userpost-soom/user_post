@@ -40,7 +40,8 @@ router.get('/signup', (req, res) => {
 router.post('/signup', (req, res) => {
     let body = req.body;
     let inputPassword = body.password;
-    if (!req.body.id || !req.body.name || !req.body.email || !req.body.phone_num) return res.status(400).send("there_is_blank");
+    if (!req.body.id || !req.body.name || !req.body.password || !req.body.email || !req.body.phone_num) return res.status(401).send("there_is_blank");
+
     if (!texttest.password.test(inputPassword)) return res.status(401).send("write_other_password");
 
     //비밀번호 암호화
@@ -64,8 +65,7 @@ router.post('/signup', (req, res) => {
         memberquery.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`,
             (err, row) => {
                 if (err) { return res.status(400); }
-                //id 휴대폰 중복이면 err되도록
-                return res.status(201).send("signup_ok");
+                return res.status(201);
             })
 
     });
@@ -81,23 +81,22 @@ router.post('/login', (req, res) => {
     memberquery.query('select * from member_table where id = ?', [id], (err, result, fiedls) => {
         if (err) { console.log(err); return res.status(400); }
         //맞는 id가 없으면 다시 입력하기
-        if (!result[0]) return res.status(404).send('checkyour_id');
+        if (!result[0]) return res.status(404).send('check_id');
 
         let user = result[0];
         let dbpassword = user.password;
         let dbsalt = user.salt;
         let hashPassword = crypto.createHash("sha512").update(password + dbsalt).digest("hex");
 
-        if (user.isResign == 'y') return res.status(401).send('checkyour_id');
+        if (user.isResign == 'y') return res.status(401).send('check_id');
 
         //값이 존재할 경우
         if (result.length > 0) {
             if (dbpassword === hashPassword) { // 비밀번호 일치여부 
-                req.session.id = user.id;
-                req.session.save(() => { return res.status(200).send(user.id + " " + user.name).redirect('/'); })
+                return res.status(200).send(user.name);
                 //로그인 정보 유지
             }
-            else return res.status(400).send('check_password');
+            else return res.status(401).send('check_password');
         }
         //존재하지 않은경우 return 
 
@@ -105,12 +104,12 @@ router.post('/login', (req, res) => {
     })
 });
 
-router.put('/modify', (req, res) => { // 수정하기 
+router.put('/', (req, res) => { // 수정하기 
     let id = req.body.id;
     let modify_password = req.body.password;
     //현재 비밀번호가 맞는지 확인은 어떻게 하지?
 
-    if (!texttest.password.test(modify_password)) return res.status(400).send("write_other_password");
+    if (!texttest.password.test(modify_password)) return res.status(401).send("write_other_password");
     //비밀번호 암호화
     let salt = Math.round((new Date().valueOf() * Math.random())) + "";
     let hashPassword = crypto.createHash("sha512").update(modify_password + salt).digest("hex");
