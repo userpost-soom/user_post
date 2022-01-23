@@ -30,29 +30,25 @@ router.use(bodyParser.urlencoded({ extended: true }));
 // );
 //웹 세션은 사용자가 애플리케이션(즉 웹이나 서버)와 상호 작용하는 동안에만 사용할 수 있도록 임시 데이터를 저장하기 위해 사용하는 데이터 형태
 
-
-//회원가입 페이지 진입
-router.get('/signup', (req, res) => {
-    console.log("get성공");
-    res.status(200).send("Enter_page");
-})
-
 //정보를 입력하고 회원가입 하기 버튼(가상)을 눌렀을 경우
 router.post('/signup', (req, res) => {
     let body = req.body;
     let inputPassword = body.password;
-    if (!req.body.id || !req.body.name || !req.body.password || !req.body.email || !req.body.phone_num) return res.status(401).send("there_is_blank");
+    if (!req.body.id) return res.status(401).send("write_id");
+    if (!req.body.name) return res.status(401).send("write_name");
+    if (!req.body.password) return res.status(401).send("write_password");
+    if (!req.body.email) return res.status(401).send("write_email");
+    if (!req.body.phone_num) return res.status(401).send("write_phone_num");
 
-    if (!texttest.password.test(inputPassword)) return res.status(401).send("write_other_password"); //정규표현식 통과못했다는걸 표시
+    if (!texttest.password.test(inputPassword)) return res.status(401).send("incorrect_password"); //정규표현식 통과못했다는걸 표시
 
     //비밀번호 암호화
     let salt = Math.round((new Date().valueOf() * Math.random())) + "";
     let hashPassword = crypto.createHash("sha512").update(inputPassword + salt).digest("hex");
 
     //입력해야 하는 필수요소들 중 하나라도 빠졌을 경우
-    if (!texttest.id.test(req.body.id)) return res.status(401).send("4_and_20size_write_olny_english_and_num"); //읽는 사람이 어려움
-    if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email"); //정규표현식 통과못했다는걸 표시
-    if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num"); // '' 
+    if (!texttest.id.test(req.body.id)) return res.status(401).send("incorrect_id");
+    if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("incorrect_phone_num");
 
     //조건을 만족할 경우
     //중복인 id 비교하기
@@ -65,10 +61,13 @@ router.post('/signup', (req, res) => {
         return;
     });
 
+    if (!texttest.email.test(req.body.email)) return res.status(401).send("incorrect_email"); //정규표현식 통과못했다는걸 표시
+
+
     memberquery.query(`INSERT INTO member_table SET id = '${req.body.id}', password = '${hashPassword}', name ='${req.body.name}', email = '${req.body.email}', phone_num = '${req.body.phone_num}', salt = '${salt}';`,
         (err, row) => {
             if (err) { return res.status(400); }
-            else return res.status(201).send("signupOK");
+            else return res.sendStatus(201);
         })
 
 });
@@ -112,7 +111,7 @@ router.put('/:idx', (req, res) => { // 수정하기
     let salt;
     let NewhashPassword;
     //현재 비밀번호가 맞는지 확인은 어떻게 하지?
-    if (!texttest.password.test(modify_password)) return res.status(401).send("write_other_newpassword");
+    if (!texttest.password.test(modify_password)) return res.status(401).send("write_other_newpassword"); //send 표현 수정
     // if (!texttest.id.test(req.body.id)) return res.status(401).send("4_and_20size_write_olny_english_and_num");
     // if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email");
     // if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num");
@@ -147,7 +146,7 @@ router.put('/:idx', (req, res) => { // 수정하기
         let hashPassword = crypto.createHash("sha512").update(password + dbsalt).digest("hex");
 
         //값이 존재할 경우
-        if (result.length > 0) {
+        if (result.length > 0) { //바꾸기
             if (dbpassword === hashPassword) { // 비밀번호 일치여부 
                 salt = Math.round((new Date().valueOf() * Math.random())) + "";
                 NewhashPassword = crypto.createHash("sha512").update(modify_password + salt).digest("hex");
