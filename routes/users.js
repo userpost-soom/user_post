@@ -43,16 +43,16 @@ router.post('/signup', (req, res) => {
     let inputPassword = body.password;
     if (!req.body.id || !req.body.name || !req.body.password || !req.body.email || !req.body.phone_num) return res.status(401).send("there_is_blank");
 
-    if (!texttest.password.test(inputPassword)) return res.status(401).send("write_other_password");
+    if (!texttest.password.test(inputPassword)) return res.status(401).send("write_other_password"); //정규표현식 통과못했다는걸 표시
 
     //비밀번호 암호화
     let salt = Math.round((new Date().valueOf() * Math.random())) + "";
     let hashPassword = crypto.createHash("sha512").update(inputPassword + salt).digest("hex");
 
     //입력해야 하는 필수요소들 중 하나라도 빠졌을 경우
-    if (!texttest.id.test(req.body.id)) return res.status(401).send("4_and_20size_write_olny_english_and_num");
-    if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email");
-    if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num");
+    if (!texttest.id.test(req.body.id)) return res.status(401).send("4_and_20size_write_olny_english_and_num"); //읽는 사람이 어려움
+    if (!texttest.email.test(req.body.email)) return res.status(401).send("wrong_information_email"); //정규표현식 통과못했다는걸 표시
+    if (!texttest.phone_num.test(req.body.phone_num)) return res.status(401).send("wrong_information_phone_num"); // '' 
 
     //조건을 만족할 경우
     //중복인 id 비교하기
@@ -83,13 +83,12 @@ router.post('/login', (req, res) => {
         if (err) { return res.status(400); }
         //맞는 id가 없으면 다시 입력하기
         if (!result[0]) return res.status(404).send('check_id');
+        if (user.isResign == 'y') return res.status(401).send('check_id');//표현 수정하기 
 
         let user = result[0];
         let dbpassword = user.password;
         let dbsalt = user.salt;
         let hashPassword = crypto.createHash("sha512").update(password + dbsalt).digest("hex");
-
-        if (user.isResign == 'y') return res.status(401).send('check_id');
 
         //값이 존재할 경우
         if (result.length > 0) {
@@ -98,7 +97,7 @@ router.post('/login', (req, res) => {
                 //로그인 정보 유지
             }
             else return res.status(401).send('check_password');
-        }
+        } else return;
         //존재하지 않은경우 return 
 
 
@@ -137,8 +136,8 @@ router.put('/:idx', (req, res) => { // 수정하기
     //         }
     //     });
     // }
-    //비밀번호를 수정할 경우
 
+    //비밀번호를 수정할 경우
     memberquery.query('select password, salt from member_table where idx = ?', idx, (err, result, fiedls) => {
         if (err) { return res.status(400); }
         if (!result[0]) return res.status(404);
@@ -178,12 +177,15 @@ router.delete('/:idx', (req, res) => {
 
     memberquery.query('select idx , isResign from member_table where idx = ?', idx,
         (err, result) => {
+            //없는 id를 불러왔을경우
             if (!result[0]) { return res.status(404); }
+            //이미 삭제된 id 일경우
             if (result[0].isResign == 'y') { return res.status(401).send("deleted_id"); }
+            //id 삭제 시간과 상태를 보내줌
             if (result[0].isResign == 'n') {
                 memberquery.query('UPDATE member_table set resign_time = current_timestamp(), isResign = "y" where idx = ?', [idx], (err, result, fiedls) => {
                     if (err) { console.log(err); return res.status(400); }
-                    return res.status(203).send("completed");
+                    return res.status(204).send("completed");
                 });
             }
 
