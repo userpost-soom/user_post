@@ -99,7 +99,8 @@ router.get('/:idx', (req, res) => {
 router.put('/:idx', (req, res) => {
     let idx = parseInt(req.params.idx);
 
-    if (!req.body.title || !req.body.content) return res.status(400).send("there_is_blank");
+    if (!req.body.title) return res.status(400).send("write_title");
+    if (!req.body.content) return res.status(400).send("write_content");
 
     //비밀번호 추가 or 변경 
     if (req.body.board_pass) {
