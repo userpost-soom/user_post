@@ -34,6 +34,7 @@ router.use(bodyParser.urlencoded({ extended: true }));
 router.post('/signup', (req, res) => {
     let body = req.body;
     let inputPassword = body.password;
+
     if (!req.body.id) return res.status(401).send("write_id");
     if (!req.body.name) return res.status(401).send("write_name");
     if (!req.body.password) return res.status(401).send("write_password");
@@ -79,10 +80,10 @@ router.post('/login', (req, res) => {
     let password = req.body.password;
 
     memberquery.query('select * from member_table where id = ?', [id], (err, result, fiedls) => {
-        if (err) { return res.status(400); }
+        if (err) { return res.sendStatus(400); }
         //맞는 id가 없으면 다시 입력하기
-        if (!result[0]) return res.status(404).send('check_id');
-        if (user.isResign == 'y') return res.status(401).send('check_id');//표현 수정하기 
+        if (!result[0]) return res.status(404).send('no_id');
+        if (user.unsign_time) return res.status(401).send('cannot_use_this_id');
 
         let user = result[0];
         let dbpassword = user.password;
@@ -94,16 +95,13 @@ router.post('/login', (req, res) => {
             if (dbpassword === hashPassword) { // 비밀번호 일치여부 
                 return res.status(200).send(user.idx + " " + user.name);
                 //로그인 정보 유지
-            }
-            else return res.status(401).send('check_password');
-        } else return;
+            } else return res.status(401).send('check_password');
+        } else return res.sendStatus(400);
         //존재하지 않은경우 return 
-
-
     })
 });
 
-router.put('/:idx', (req, res) => { // 수정하기 
+router.put('/:idx', (req, res) => {
     let body = req.body;
     let password = body.password;
     let modify_password = body.newpassword;
@@ -138,8 +136,8 @@ router.put('/:idx', (req, res) => { // 수정하기
 
     //비밀번호를 수정할 경우
     memberquery.query('select password, salt from member_table where idx = ?', idx, (err, result, fiedls) => {
-        if (err) { return res.status(400); }
-        if (!result[0]) return res.status(404);
+        if (err) { return res.sendStatus(400); }
+        if (!result[0]) return res.sendStatus(404);
         let user = result[0];
         let dbpassword = user.password;
         let dbsalt = user.salt;
@@ -149,25 +147,24 @@ router.put('/:idx', (req, res) => { // 수정하기
         if (result.length > 0) { //바꾸기
             if (dbpassword === hashPassword) { // 비밀번호 일치여부 
                 salt = Math.round((new Date().valueOf() * Math.random())) + "";
-                NewhashPassword = crypto.createHash("sha512").update(modify_password + salt).digest("hex");
-            }
-            else return res.status(401).send('check_orizinal_password');
+                New_hashPassword = crypto.createHash("sha512").update(modify_password + salt).digest("hex");
+            } else return res.status(401).send('check_orizinal_password');
 
-            memberquery.query(`UPDATE member_table SET password = '${NewhashPassword}', salt = '${salt}', modify_time = current_timestamp() where idx = ${idx}`,
+            memberquery.query(`UPDATE member_table SET password = '${New_hashPassword}', salt = '${salt}', modify_time = current_timestamp() where idx = ${idx}`,
                 (err, result) => {
                     if (err) { console.log(err); return res.status(400); };
-                    return res.status(200).send("modify");
+                    return res.sendStatus(200);
                 })
-        }
+        } return res.sendStatus(400);
     });
 });
 
 //로그아웃
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {
-        if (err) return res.status(500);
+        if (err) return res.sendStatus(500);
     })
-    return res.status(200);
+    return res.sendStatus(200);
 })
 
 //회원탈퇴
@@ -179,12 +176,12 @@ router.delete('/:idx', (req, res) => {
             //없는 id를 불러왔을경우
             if (!result[0]) { return res.status(404); }
             //이미 삭제된 id 일경우
-            if (result[0].isResign == 'y') { return res.status(401).send("deleted_id"); }
+            if (result[0].resign_time) { return res.status(401).send("deleted_id"); }
             //id 삭제 시간과 상태를 보내줌
-            if (result[0].isResign == 'n') {
-                memberquery.query('UPDATE member_table set resign_time = current_timestamp(), isResign = "y" where idx = ?', [idx], (err, result, fiedls) => {
+            if (!result[0].isResign_time) {
+                memberquery.query('UPDATE member_table set resign_time = current_timestamp() where idx = ?', [idx], (err, result, fiedls) => {
                     if (err) { console.log(err); return res.status(400); }
-                    return res.status(204).send("completed");
+                    return res.sendStatus(204);
                 });
             }
 
