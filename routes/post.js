@@ -34,7 +34,7 @@ router.get('/', (req, res, next) => {
     try { //delete_time이 없는 즉, 삭제되지 않은 게시글 리스트를 보여줌
         postquery.query('select idx, title, content, user_id, upload_time from board_table where delete_time is null order by idx asc',
             (err, result, field) => {
-                if (err) res.status(401);
+                if (err) { console.log(err); return res.status(400); }
                 return res.status(200).send(result);
             });
 
@@ -83,7 +83,7 @@ router.get('/:idx', (req, res) => {
         if (err) res.status(400).send(err);
         // 없는 인덱스 페이지를 불러올경우
         if (!result[0]) return res.status(404).send("");
-        //패스워드가 있을 경우
+        //게시글의 패스워드가 있을 경우
         if (result[0].board_pass) {
             let dbpassword = result[0].board_pass;
             if (password === dbpassword) return res.status(200).send(result[0]);
@@ -122,11 +122,12 @@ router.put('/:idx', (req, res) => {
 router.delete('/:idx', (req, res) => {
     //삭제시간 넣기
     let idx = parseInt(req.params.idx);
-    //인덱스 페이지가 없는경우
+    //인덱스 페이지 있는지 판별
     postquery.query('select idx from board_table where idx = ?', idx,
         (err, result) => {
+            // 페이지가 없을경우
             if (!result[0]) return res.status(404).send("");
-            if (result[0]) {
+            if (result[0]) { //페이지가 있을경우
                 postquery.query('update board_table SET delete_time = current_timestamp() where idx = ?', idx,
                     (err, result) => {
                         if (err) { return res.status(401); }
@@ -140,6 +141,3 @@ router.delete('/:idx', (req, res) => {
 
 
 module.exports = router;
-
-
-// 비밀번호를 입력 해야 하는걸까? 비밀글이라고 체크를?
