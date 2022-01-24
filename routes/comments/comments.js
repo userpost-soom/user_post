@@ -1,5 +1,5 @@
 const express = require('express');
-let router = express.Router();
+let router = express.Router({ mergeParams: true });
 const bodyParser = require('body-parser');
 const session = require('express-session');
 var MySQLStore = require("express-mysql-session")(session);
@@ -12,8 +12,9 @@ const commentquery = mysqlCon.init();
 //     let insert_query = `insert into comment_table SET = ?`;
 // }
 router.post('/', (req, res) => {
-    let insert_query = `insert into comment_table SET = ?`;
-
+    let insert_query = `insert into comment_table SET ?`;
+    let idx = parseInt(req.params.idx);
+    req.body.post_idx = idx;
     commentquery.query(insert_query, req.body, (err, result, fleid) => {
         if (err) { console.log(err); return res.sendStatus(400); }
         return res.sendStatus(200);
