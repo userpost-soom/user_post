@@ -4,6 +4,7 @@ const express = require('express');
 const app = express();
 const userroute = require('./routes/users');
 const postroute = require('./routes/post');
+const commentroute = require('./routes/comments/comments');
 const bodyParser = require('body-parser');
 const port = 3000;
 const logger = require('morgan');
@@ -14,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/user', userroute);
 app.use('/post', postroute);
+app.use('/post/:idx', commentroute); //임시로 url
 
 // 미들웨어가 된 라우터
 // 애플리케이션 단계에서 '/' 와 '/users'로 URL을 분리하여 처리
