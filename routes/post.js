@@ -1,13 +1,14 @@
 const express = require('express');
-let router = express.Router();
+let router = express.Router({ mergeParams: true });
 const bodyParser = require('body-parser');
 const session = require('express-session');
 var MySQLStore = require("express-mysql-session")(session);
 const mysqlCon = require('../mysql');
 const logger = require('morgan');
 
+const commentroute = require('./comments/comments');
 const crypto = require('crypto');
-
+//const router_child = express.Router({ mergeParams: true });
 
 router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({ extended: true }));
@@ -94,6 +95,10 @@ router.get('/:idx', (req, res) => {
         return res.status(200).send(result[0]);
     });
 });
+
+
+router.use('/:idx', commentroute); //임시로 url
+
 
 //수정하기 버튼을 눌렀을 경우
 router.put('/:idx', (req, res) => {
