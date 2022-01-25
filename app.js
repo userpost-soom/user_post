@@ -4,10 +4,12 @@ const express = require('express');
 const app = express();
 const userroute = require('./routes/users');
 const postroute = require('./routes/post');
-const commentroute = require('./routes/comments/comments');
+const commentroute = require('./routes/comments');
 const bodyParser = require('body-parser');
 const port = 3000;
 const logger = require('morgan');
+
+const router = express.Router({ mergeParams: true });
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -15,8 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/user', userroute);
 app.use('/post', postroute);
-app.use('/post/:idx', commentroute); //임시로 url
-
+app.use('/comment', commentroute);
 // 미들웨어가 된 라우터
 // 애플리케이션 단계에서 '/' 와 '/users'로 URL을 분리하여 처리
 // app.use()는 미들웨어 기능을 마운트하거나 지정된 경로에 마운트하는 데 사용된다. 기본 경로가 일치하면 미들웨어 기능이 실행
