@@ -11,6 +11,7 @@ const mysqlCon = {
             password: process.env.DB_PW,
             port: process.env.DB_PORT,
             database: process.env.DB_NAME,
+            multipleStatements: true
         });
     },
     // 연결
